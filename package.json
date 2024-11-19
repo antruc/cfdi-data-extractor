@@ -1,0 +1,28 @@
+{
+  "name": "cfdi-data-extractor",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "prettier": "npx prettier src --check",
+    "lint": "npx eslint src",
+    "format": "npm run prettier -- --write && npm run lint -- --fix",
+    "build": "node esbuild.js",
+    "dev": "node esbuild.js development",
+    "test": "npm run prettier && npm run lint"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.0",
+    "file-saver": "^2.0.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "eslint": "^8.52.0",
+    "fs-extra": "^11.2.0",
+    "node-html-parser": "^6.1.13",
+    "open": "^10.1.0",
+    "prettier": "^3.1.0",
+    "prettier-eslint": "^16.1.2"
+  },
+  "license": "GPL-3.0-only"
+}

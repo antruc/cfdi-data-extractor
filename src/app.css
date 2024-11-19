@@ -1,0 +1,48 @@
+@import url(./libs/chota.css);
+
+:root {
+  --color-primary: #161616;
+  --color-darkGrey: #161616;
+  --color-lightGrey: #fefefe;
+  --bg-color: #fefefe;
+  --bg-secondary-color: #161616;
+  --font-color: #161616;
+  --font-size: 2rem;
+}
+input[type='file'] {
+  padding: 1.2rem;
+  cursor: pointer;
+  width: 50%;
+  border: 2px solid var(--color-primary);
+}
+input[type='file']:hover {
+  border: 2px solid var(--color-primary);
+}
+input[type='file']::file-selector-button {
+  display: none;
+}
+.button.outline {
+  border: 2px solid var(--color-primary);
+}
+.button {
+  margin: 30px;
+  font-weight: bold;
+}
+.button:hover {
+  opacity: 1;
+}
+body.dark {
+  --color-primary: #fefefe;
+  --bg-color: #161616;
+  --bg-secondary-color: #fefefe;
+  --font-color: #fefefe;
+}
+#content {
+  margin-top: 40vh;
+}
+#download {
+  visibility: hidden;
+}
+#download.is-visible {
+  visibility: visible;
+}
