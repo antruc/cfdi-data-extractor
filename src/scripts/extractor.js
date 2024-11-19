@@ -3,6 +3,7 @@ import { saveAs } from 'file-saver'
 import onEvent from './onEvent.js'
 
 let data = null
+let name = null
 
 const extractor = {
   importXML(event) {
@@ -12,6 +13,7 @@ const extractor = {
       const inputUpload = document.querySelector('#upload')
 
       const file = inputUpload.files[0]
+      name = file.name.substring(0, 36)
 
       const reader = new FileReader()
       reader.readAsText(file)
@@ -44,8 +46,6 @@ const extractor = {
     const root = jsonObj.length === 1 ? 0 : 1
 
     const fecha = jsonObj[root][':@']['@_Fecha'].substring(0, 10)
-
-    console.log(fecha)
 
     const descripcion = () => {
       const conceptos = jsonObj[root]['cfdi:Comprobante'][2]['cfdi:Conceptos']
@@ -290,7 +290,7 @@ const extractor = {
         type: 'text/plain;charset=utf-8'
       })
       // Save text document
-      saveAs(blob, `${Date.now()}.txt`)
+      saveAs(blob, `${name}.txt`)
 
       const downloadElem = document.querySelector('#download')
       downloadElem.classList.remove('is-visible')
