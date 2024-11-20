@@ -13,7 +13,7 @@ const extractor = {
       const inputUpload = document.querySelector('#upload')
 
       const file = inputUpload.files[0]
-      name = file.name.substring(0, 36)
+      name = file.name.replace('.xml', '')
 
       const reader = new FileReader()
       reader.readAsText(file)
