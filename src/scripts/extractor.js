@@ -120,7 +120,7 @@ const extractor = {
     }
 
     const formaPago = () => {
-      let pago =
+      const pago =
         jsonObj[root]['cfdi:Comprobante'].length === 5
           ? jsonObj[root][':@']['@_FormaPago']
           : jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
@@ -348,8 +348,12 @@ const extractor = {
         rootFiscal
       ][':@']['@_UUID']
 
+    const emisor = descripcion().includes('PAGO POR SERVICIOS PROFESIONALES')
+      ? jsonObj[root]['cfdi:Comprobante'][0][':@']['@_Nombre']
+      : ''
+
     // @ to format text to columns in excel
-    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${ivaTrasladado()}@${ivaRetenido()}@${isrRetenido()}@${iepsTrasladado()}@@${folioFactura()}@${folioFiscal}`
+    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${ivaTrasladado()}@${ivaRetenido()}@${isrRetenido()}@${iepsTrasladado()}@@${folioFactura()}@${folioFiscal}@${emisor}`
   },
   exportData(event) {
     const matchDownload = event.target.matches('#download')
