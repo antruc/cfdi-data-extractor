@@ -343,17 +343,28 @@ const extractor = {
 
     const rootFiscal = jsonObj[root]['cfdi:Comprobante'].length === 5 ? 0 : 1
 
-    const folioFiscal =
-      jsonObj[root]['cfdi:Comprobante'][rootFolio]['cfdi:Complemento'][
-        rootFiscal
-      ][':@']['@_UUID']
+    const folioFiscal = () => {
+      const folio =
+        jsonObj[root]['cfdi:Comprobante'][rootFolio]['cfdi:Complemento'][
+          rootFiscal
+        ][':@']['@_UUID']
+      if (folio !== undefined) {
+        return folio
+      } else if ((folio === undefined) & (rootFiscal === 0)) {
+        return jsonObj[root]['cfdi:Comprobante'][rootFolio][
+          'cfdi:Complemento'
+        ][1][':@']['@_UUID']
+      } else {
+        return ''
+      }
+    }
 
     const emisor = descripcion().includes('PAGO POR SERVICIOS PROFESIONALES')
       ? jsonObj[root]['cfdi:Comprobante'][0][':@']['@_Nombre']
       : ''
 
     // @ to format text to columns in excel
-    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${ivaTrasladado()}@${ivaRetenido()}@${isrRetenido()}@${iepsTrasladado()}@@${folioFactura()}@${folioFiscal}@${emisor}`
+    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${ivaTrasladado()}@${ivaRetenido()}@${isrRetenido()}@${iepsTrasladado()}@@${folioFactura()}@${folioFiscal()}@${emisor}`
   },
   exportData(event) {
     const matchDownload = event.target.matches('#download')
