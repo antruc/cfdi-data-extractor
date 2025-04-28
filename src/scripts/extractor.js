@@ -281,8 +281,8 @@ const extractor = {
               impuestos[i]['pago20:RetencionesP'][e][':@']['@_ImpuestoP'] ===
               '001'
             ) {
-              iva =
-                iva +
+              isr =
+                isr +
                 Number(
                   impuestos[i]['pago20:RetencionesP'][e][':@']['@_ImporteP']
                 )
@@ -316,8 +316,8 @@ const extractor = {
               impuestos[i]['pago20:TrasladosP'][e][':@']['@_ImpuestoP'] ===
               '003'
             ) {
-              iva =
-                iva +
+              ieps =
+                ieps +
                 Number(impuestos[i]['pago20:TrasladosP'][e][':@']['@_ImporteP'])
             }
           })
