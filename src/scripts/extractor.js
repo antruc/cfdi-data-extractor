@@ -39,10 +39,8 @@ const extractor = {
       ignoreAttributes: false,
       preserveOrder: true
     }
-
     const parser = new XMLParser(options)
     const jsonObj = parser.parse(xmlFile)
-
     const root = jsonObj.length === 1 ? 0 : 1
 
     const fecha = jsonObj[root][':@']['@_Fecha'].substring(0, 10)
@@ -369,7 +367,14 @@ const extractor = {
   exportData(event) {
     const matchDownload = event.target.matches('#download')
     if (matchDownload) {
-      extractor.convert()
+      try {
+        extractor.convert()
+      } catch (error) {
+        if (error.name === 'TypeError') {
+          alert('El archivo XML no es compatible')
+          return
+        }
+      }
       let blob = new Blob([data], {
         type: 'text/plain;charset=utf-8'
       })
