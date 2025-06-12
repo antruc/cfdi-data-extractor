@@ -26,7 +26,7 @@ const extractor = {
         } else {
           alert('El archivo no es XML')
           // Empty input box
-          event.target.value = null
+          inputUpload.value = null
         }
       }
     }
@@ -41,18 +41,26 @@ const extractor = {
     }
     const parser = new XMLParser(options)
     const jsonObj = parser.parse(xmlFile)
+    // Add compability with different cfdi formats
     const root = jsonObj.length === 1 ? 0 : 1
 
     const fecha = jsonObj[root][':@']['@_Fecha'].substring(0, 10)
 
     const descripcion = () => {
-      const conceptos = jsonObj[root]['cfdi:Comprobante'][2]['cfdi:Conceptos']
+      const conceptos =
+        jsonObj[root]['cfdi:Comprobante'].length === 6
+          ? jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Conceptos']
+          : jsonObj[root]['cfdi:Comprobante'][2]['cfdi:Conceptos']
       let desc = []
       for (let i = 0; i < conceptos.length; i++) {
         let item =
-          jsonObj[root]['cfdi:Comprobante'][2]['cfdi:Conceptos'][i][':@'][
-            '@_Descripcion'
-          ]
+          jsonObj[root]['cfdi:Comprobante'].length === 6
+            ? jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Conceptos'][i][':@'][
+                '@_Descripcion'
+              ]
+            : jsonObj[root]['cfdi:Comprobante'][2]['cfdi:Conceptos'][i][':@'][
+                '@_Descripcion'
+              ]
         desc.push(item)
       }
       // Create new array without duplicate values
@@ -61,7 +69,10 @@ const extractor = {
     }
 
     const usoCFDI = () => {
-      const uso = jsonObj[root]['cfdi:Comprobante'][1][':@']['@_UsoCFDI']
+      const uso =
+        jsonObj[root]['cfdi:Comprobante'].length === 6
+          ? jsonObj[root]['cfdi:Comprobante'][2][':@']['@_UsoCFDI']
+          : jsonObj[root]['cfdi:Comprobante'][1][':@']['@_UsoCFDI']
       if (uso === 'G01') {
         return 'ADQUISICIÓN DE MERCANCÍAS'
       } else if (uso === 'G02') {
@@ -118,56 +129,61 @@ const extractor = {
     }
 
     const formaPago = () => {
-      const pago =
-        jsonObj[root]['cfdi:Comprobante'].length === 5
-          ? jsonObj[root][':@']['@_FormaPago']
-          : jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-              'pago20:Pagos'
-            ][1][':@']['@_FormaDePagoP']
+      const pago = () => {
+        if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
+          return jsonObj[root][':@']['@_FormaPago']
+        } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
+          return jsonObj[root][':@']['@_FormaPago']
+        } else {
+          return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
+            'pago20:Pagos'
+          ][1][':@']['@_FormaDePagoP']
+        }
+      }
 
-      if (pago === '01') {
+      if (pago() === '01') {
         return 'EFECTIVO'
-      } else if (pago === '02') {
+      } else if (pago() === '02') {
         return 'CHEQUE NOMINATIVO'
-      } else if (pago === '03') {
+      } else if (pago() === '03') {
         return 'TRANSFERENCIA ELECTRÓNICA DE FONDOS SPEI'
-      } else if (pago === '04') {
+      } else if (pago() === '04') {
         return 'TARJETA DE CRÉDITO'
-      } else if (pago === '05') {
+      } else if (pago() === '05') {
         return 'MONEDERO ELECTRÓNICO'
-      } else if (pago === '06') {
+      } else if (pago() === '06') {
         return 'DINERO ELECTRÓNICO'
-      } else if (pago === '08') {
+      } else if (pago() === '08') {
         return 'VALES DE DESPENSA'
-      } else if (pago === '12') {
+      } else if (pago() === '12') {
         return 'DACIÓN EN PAGO'
-      } else if (pago === '13') {
+      } else if (pago() === '13') {
         return 'PAGO POR SUBROGACIÓN'
-      } else if (pago === '14') {
+      } else if (pago() === '14') {
         return 'PAGO POR CONSIGNACIÓN'
-      } else if (pago === '15') {
+      } else if (pago() === '15') {
         return 'CONDONACIÓN'
-      } else if (pago === '17') {
+      } else if (pago() === '17') {
         return 'COMPENSACIÓN'
-      } else if (pago === '23') {
+      } else if (pago() === '23') {
         return 'NOVACIÓN'
-      } else if (pago === '24') {
+      } else if (pago() === '24') {
         return 'CONFUSIÓN'
-      } else if (pago === '25') {
+      } else if (pago() === '25') {
         return 'REMISIÓN DE DEUDA'
-      } else if (pago === '26') {
+      } else if (pago() === '26') {
         return 'PRESCRIPCIÓN O CADUCIDAD'
-      } else if (pago === '27') {
+      } else if (pago() === '27') {
         return 'A SATISFACCIÓN DEL ACREEDOR'
-      } else if (pago === '28') {
+      } else if (pago() === '28') {
         return 'TARJETA DE DÉBITO'
-      } else if (pago === '29') {
+      } else if (pago() === '29') {
         return 'TARJETA DE SERVICIOS'
-      } else if (pago === '30') {
+      } else if (pago() === '30') {
         return 'APLICACIÓN DE ANTICIPOS'
-      } else if (pago === '31') {
+      } else if (pago() === '31') {
         return 'INTERMEDIARIO PAGOS'
-      } else if (pago === '99') {
+      } else if (pago() === '99') {
         return 'POR DEFINIR'
       } else {
         return ''
@@ -181,16 +197,23 @@ const extractor = {
       if (cantidad !== undefined) {
         return cantidad
       } else {
+        // No descuento found
         return ''
       }
     }
 
-    const impuestos =
-      jsonObj[root]['cfdi:Comprobante'].length === 5
-        ? jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Impuestos']
-        : jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-            'pago20:Pagos'
-          ][1]['pago20:Pago'][1]['pago20:ImpuestosP']
+    const impuestosFunc = () => {
+      if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
+        return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Impuestos']
+      } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
+        return jsonObj[root]['cfdi:Comprobante'][4]['cfdi:Impuestos']
+      } else
+        return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
+          'pago20:Pagos'
+        ][1]['pago20:Pago'][1]['pago20:ImpuestosP']
+    }
+
+    const impuestos = impuestosFunc()
 
     const ivaTrasladado = () => {
       let iva = 0
@@ -337,19 +360,35 @@ const extractor = {
       }
     }
 
-    const rootFolio = jsonObj[root]['cfdi:Comprobante'].length === 5 ? 4 : 3
+    const rootFolio = () => {
+      if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
+        return 4
+      } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
+        return 5
+      } else {
+        return 3
+      }
+    }
 
-    const rootFiscal = jsonObj[root]['cfdi:Comprobante'].length === 5 ? 0 : 1
+    const rootFiscal = () => {
+      if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
+        return 0
+      } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
+        return 0
+      } else {
+        return 1
+      }
+    }
 
     const folioFiscal = () => {
       const folio =
-        jsonObj[root]['cfdi:Comprobante'][rootFolio]['cfdi:Complemento'][
-          rootFiscal
+        jsonObj[root]['cfdi:Comprobante'][rootFolio()]['cfdi:Complemento'][
+          rootFiscal()
         ][':@']['@_UUID']
       if (folio !== undefined) {
         return folio
-      } else if ((folio === undefined) & (rootFiscal === 0)) {
-        return jsonObj[root]['cfdi:Comprobante'][rootFolio][
+      } else if ((folio === undefined) & (rootFiscal() === 0)) {
+        return jsonObj[root]['cfdi:Comprobante'][rootFolio()][
           'cfdi:Complemento'
         ][1][':@']['@_UUID']
       } else {
@@ -382,10 +421,12 @@ const extractor = {
       saveAs(blob, `${name}.txt`)
 
       const downloadElem = document.querySelector('#download')
-      downloadElem.classList.remove('is-visible')
+      if (downloadElem) {
+        downloadElem.classList.remove('is-visible')
+      }
 
-      const uploadElem = document.querySelector('#upload')
-      uploadElem.value = null
+      const inputUpload = document.querySelector('#upload')
+      inputUpload.value = null
     }
   },
   init() {
