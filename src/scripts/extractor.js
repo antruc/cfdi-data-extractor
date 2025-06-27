@@ -135,9 +135,17 @@ const extractor = {
         } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
           return jsonObj[root][':@']['@_FormaPago']
         } else {
-          return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-            'pago20:Pagos'
-          ][1][':@']['@_FormaDePagoP']
+          if (
+            jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
+              'pago20:Pagos'
+            ] === undefined
+          ) {
+            return jsonObj[root][':@']['@_FormaPago']
+          } else {
+            return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
+              'pago20:Pagos'
+            ][1][':@']['@_FormaDePagoP']
+          }
         }
       }
 
@@ -207,10 +215,19 @@ const extractor = {
         return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Impuestos']
       } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
         return jsonObj[root]['cfdi:Comprobante'][4]['cfdi:Impuestos']
-      } else
-        return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-          'pago20:Pagos'
-        ][1]['pago20:Pago'][1]['pago20:ImpuestosP']
+      } else {
+        if (
+          jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
+            'pago20:Pagos'
+          ] === undefined
+        ) {
+          return ''
+        } else {
+          return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
+            'pago20:Pagos'
+          ][1]['pago20:Pago'][1]['pago20:ImpuestosP']
+        }
+      }
     }
 
     const impuestos = impuestosFunc()
@@ -376,7 +393,14 @@ const extractor = {
       } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
         return 0
       } else {
-        return 1
+        if (
+          jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][1] ===
+          undefined
+        ) {
+          return 0
+        } else {
+          return 1
+        }
       }
     }
 
@@ -391,6 +415,10 @@ const extractor = {
         return jsonObj[root]['cfdi:Comprobante'][rootFolio()][
           'cfdi:Complemento'
         ][1][':@']['@_UUID']
+      } else if ((folio === undefined) & (rootFiscal() === 1)) {
+        return jsonObj[root]['cfdi:Comprobante'][rootFolio()][
+          'cfdi:Complemento'
+        ][rootFiscal()][':@']['@_UUID']
       } else {
         return ''
       }
@@ -406,14 +434,15 @@ const extractor = {
   exportData(event) {
     const matchDownload = event.target.matches('#download')
     if (matchDownload) {
-      try {
+      extractor.convert()
+      /*try {
         extractor.convert()
       } catch (error) {
         if (error.name === 'TypeError') {
           alert('El archivo XML no es compatible')
           return
         }
-      }
+      }*/
       let blob = new Blob([data], {
         type: 'text/plain;charset=utf-8'
       })
