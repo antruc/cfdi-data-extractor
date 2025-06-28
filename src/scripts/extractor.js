@@ -41,26 +41,25 @@ const extractor = {
     }
     const parser = new XMLParser(options)
     const jsonObj = parser.parse(xmlFile)
+
     // Add compability with different cfdi formats
     const root = jsonObj.length === 1 ? 0 : 1
 
     const fecha = jsonObj[root][':@']['@_Fecha'].substring(0, 10)
 
+    const comprobante = jsonObj[root]['cfdi:Comprobante']
+
     const descripcion = () => {
       const conceptos =
-        jsonObj[root]['cfdi:Comprobante'].length === 6
-          ? jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Conceptos']
-          : jsonObj[root]['cfdi:Comprobante'][2]['cfdi:Conceptos']
+        comprobante[3]['cfdi:Conceptos'] === undefined
+          ? comprobante[2]['cfdi:Conceptos']
+          : comprobante[3]['cfdi:Conceptos']
       let desc = []
       for (let i = 0; i < conceptos.length; i++) {
         let item =
-          jsonObj[root]['cfdi:Comprobante'].length === 6
-            ? jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Conceptos'][i][':@'][
-                '@_Descripcion'
-              ]
-            : jsonObj[root]['cfdi:Comprobante'][2]['cfdi:Conceptos'][i][':@'][
-                '@_Descripcion'
-              ]
+          comprobante[3]['cfdi:Conceptos'] === undefined
+            ? comprobante[2]['cfdi:Conceptos'][i][':@']['@_Descripcion']
+            : comprobante[3]['cfdi:Conceptos'][i][':@']['@_Descripcion']
         desc.push(item)
       }
       // Create new array without duplicate values
@@ -70,9 +69,9 @@ const extractor = {
 
     const usoCFDI = () => {
       const uso =
-        jsonObj[root]['cfdi:Comprobante'].length === 6
-          ? jsonObj[root]['cfdi:Comprobante'][2][':@']['@_UsoCFDI']
-          : jsonObj[root]['cfdi:Comprobante'][1][':@']['@_UsoCFDI']
+        comprobante[2][':@'] === undefined
+          ? comprobante[1][':@']['@_UsoCFDI']
+          : comprobante[2][':@']['@_UsoCFDI']
       if (uso === 'G01') {
         return 'ADQUISICIÓN DE MERCANCÍAS'
       } else if (uso === 'G02') {
@@ -130,25 +129,20 @@ const extractor = {
 
     const formaPago = () => {
       const pago = () => {
-        if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
-          return jsonObj[root][':@']['@_FormaPago']
-        } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
+        if (comprobante.length >= 5) {
           return jsonObj[root][':@']['@_FormaPago']
         } else {
           if (
-            jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-              'pago20:Pagos'
-            ] === undefined
+            comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'] === undefined
           ) {
             return jsonObj[root][':@']['@_FormaPago']
           } else {
-            return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-              'pago20:Pagos'
-            ][1][':@']['@_FormaDePagoP']
+            return comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'][1][
+              ':@'
+            ]['@_FormaDePagoP']
           }
         }
       }
-
       if (pago() === '01') {
         return 'EFECTIVO'
       } else if (pago() === '02') {
@@ -202,167 +196,68 @@ const extractor = {
 
     const descuento = () => {
       const cantidad = jsonObj[root][':@']['@_Descuento']
-      if (cantidad !== undefined) {
-        return cantidad
-      } else {
+      if (cantidad === undefined) {
         // No descuento found
         return ''
+      } else {
+        return cantidad
       }
     }
 
     const impuestosFunc = () => {
-      if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
-        return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Impuestos']
-      } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
-        return jsonObj[root]['cfdi:Comprobante'][4]['cfdi:Impuestos']
+      if (comprobante.length >= 5) {
+        if (comprobante[4]['cfdi:Impuestos'] === undefined) {
+          return comprobante[3]['cfdi:Impuestos']
+        } else {
+          return comprobante[4]['cfdi:Impuestos']
+        }
       } else {
         if (
-          jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-            'pago20:Pagos'
-          ] === undefined
+          comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'] === undefined
         ) {
+          // No impuestos found
           return ''
         } else {
-          return jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][0][
-            'pago20:Pagos'
-          ][1]['pago20:Pago'][1]['pago20:ImpuestosP']
+          return comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'][1][
+            'pago20:Pago'
+          ][1]['pago20:ImpuestosP']
         }
       }
     }
 
     const impuestos = impuestosFunc()
 
-    const ivaTrasladado = () => {
-      let iva = 0
+    const trasladadoRetenido = (taxName, taxNumber) => {
+      let tax = 0
       Object.keys(impuestos).forEach((i) => {
-        if (impuestos[i]['cfdi:Traslados'] !== undefined) {
-          Object.keys(impuestos[i]['cfdi:Traslados']).forEach((e) => {
+        if (impuestos[i][`cfdi:${taxName}`] !== undefined) {
+          Object.keys(impuestos[i][`cfdi:${taxName}`]).forEach((e) => {
             if (
-              impuestos[i]['cfdi:Traslados'][e][':@']['@_Impuesto'] === '002'
+              impuestos[i][`cfdi:${taxName}`][e][':@']['@_Impuesto'] ===
+              taxNumber
             ) {
-              iva =
-                iva +
-                Number(impuestos[i]['cfdi:Traslados'][e][':@']['@_Importe'])
+              tax =
+                tax +
+                Number(impuestos[i][`cfdi:${taxName}`][e][':@']['@_Importe'])
             }
           })
-        } else if (impuestos[i]['pago20:TrasladosP'] !== undefined) {
-          Object.keys(impuestos[i]['pago20:TrasladosP']).forEach((e) => {
+        } else if (impuestos[i][`pago20:${taxName}P`] !== undefined) {
+          Object.keys(impuestos[i][`pago20:${taxName}P`]).forEach((e) => {
             if (
-              impuestos[i]['pago20:TrasladosP'][e][':@']['@_ImpuestoP'] ===
-              '002'
+              impuestos[i][`pago20:${taxName}P`][e][':@']['@_ImpuestoP'] ===
+              taxNumber
             ) {
-              iva =
-                iva +
-                Number(impuestos[i]['pago20:TrasladosP'][e][':@']['@_ImporteP'])
-            }
-          })
-        }
-      })
-      if (iva > 0) {
-        return iva
-      } else {
-        return ''
-      }
-    }
-
-    const ivaRetenido = () => {
-      let iva = 0
-      Object.keys(impuestos).forEach((i) => {
-        if (impuestos[i]['cfdi:Retenciones'] !== undefined) {
-          Object.keys(impuestos[i]['cfdi:Retenciones']).forEach((e) => {
-            if (
-              impuestos[i]['cfdi:Retenciones'][e][':@']['@_Impuesto'] === '002'
-            ) {
-              iva =
-                iva +
-                Number(impuestos[i]['cfdi:Retenciones'][e][':@']['@_Importe'])
-            }
-          })
-        } else if (impuestos[i]['pago20:RetencionesP'] !== undefined) {
-          Object.keys(impuestos[i]['pago20:RetencionesP']).forEach((e) => {
-            if (
-              impuestos[i]['pago20:RetencionesP'][e][':@']['@_ImpuestoP'] ===
-              '002'
-            ) {
-              iva =
-                iva +
+              tax =
+                tax +
                 Number(
-                  impuestos[i]['pago20:RetencionesP'][e][':@']['@_ImporteP']
+                  impuestos[i][`pago20:${taxName}P`][e][':@']['@_ImporteP']
                 )
             }
           })
         }
       })
-      if (iva > 0) {
-        return iva
-      } else {
-        return ''
-      }
-    }
-
-    const isrRetenido = () => {
-      let isr = 0
-      Object.keys(impuestos).forEach((i) => {
-        if (impuestos[i]['cfdi:Retenciones'] !== undefined) {
-          Object.keys(impuestos[i]['cfdi:Retenciones']).forEach((e) => {
-            if (
-              impuestos[i]['cfdi:Retenciones'][e][':@']['@_Impuesto'] === '001'
-            ) {
-              isr =
-                isr +
-                Number(impuestos[i]['cfdi:Retenciones'][e][':@']['@_Importe'])
-            }
-          })
-        } else if (impuestos[i]['pago20:RetencionesP'] !== undefined) {
-          Object.keys(impuestos[i]['pago20:RetencionesP']).forEach((e) => {
-            if (
-              impuestos[i]['pago20:RetencionesP'][e][':@']['@_ImpuestoP'] ===
-              '001'
-            ) {
-              isr =
-                isr +
-                Number(
-                  impuestos[i]['pago20:RetencionesP'][e][':@']['@_ImporteP']
-                )
-            }
-          })
-        }
-      })
-      if (isr > 0) {
-        return isr
-      } else {
-        return ''
-      }
-    }
-
-    const iepsTrasladado = () => {
-      let ieps = 0
-      Object.keys(impuestos).forEach((i) => {
-        if (impuestos[i]['cfdi:Traslados'] !== undefined) {
-          Object.keys(impuestos[i]['cfdi:Traslados']).forEach((e) => {
-            if (
-              impuestos[i]['cfdi:Traslados'][e][':@']['@_Impuesto'] === '003'
-            ) {
-              ieps =
-                ieps +
-                Number(impuestos[i]['cfdi:Traslados'][e][':@']['@_Importe'])
-            }
-          })
-        } else if (impuestos[i]['pago20:TrasladosP'] !== undefined) {
-          Object.keys(impuestos[i]['pago20:TrasladosP']).forEach((e) => {
-            if (
-              impuestos[i]['pago20:TrasladosP'][e][':@']['@_ImpuestoP'] ===
-              '003'
-            ) {
-              ieps =
-                ieps +
-                Number(impuestos[i]['pago20:TrasladosP'][e][':@']['@_ImporteP'])
-            }
-          })
-        }
-      })
-      if (ieps > 0) {
-        return ieps
+      if (tax > 0) {
+        return tax
       } else {
         return ''
       }
@@ -370,79 +265,50 @@ const extractor = {
 
     const folioFactura = () => {
       const folio = jsonObj[root][':@']['@_Folio']
-      if (folio !== undefined) {
-        return folio
-      } else {
+      if (folio === undefined) {
         return ''
-      }
-    }
-
-    const rootFolio = () => {
-      if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
-        return 4
-      } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
-        return 5
       } else {
-        return 3
-      }
-    }
-
-    const rootFiscal = () => {
-      if (jsonObj[root]['cfdi:Comprobante'].length === 5) {
-        return 0
-      } else if (jsonObj[root]['cfdi:Comprobante'].length === 6) {
-        return 0
-      } else {
-        if (
-          jsonObj[root]['cfdi:Comprobante'][3]['cfdi:Complemento'][1] ===
-          undefined
-        ) {
-          return 0
-        } else {
-          return 1
-        }
+        return folio
       }
     }
 
     const folioFiscal = () => {
-      const folio =
-        jsonObj[root]['cfdi:Comprobante'][rootFolio()]['cfdi:Complemento'][
-          rootFiscal()
-        ][':@']['@_UUID']
-      if (folio !== undefined) {
-        return folio
-      } else if ((folio === undefined) & (rootFiscal() === 0)) {
-        return jsonObj[root]['cfdi:Comprobante'][rootFolio()][
-          'cfdi:Complemento'
-        ][1][':@']['@_UUID']
-      } else if ((folio === undefined) & (rootFiscal() === 1)) {
-        return jsonObj[root]['cfdi:Comprobante'][rootFolio()][
-          'cfdi:Complemento'
-        ][rootFiscal()][':@']['@_UUID']
+      if (comprobante.length === 5) {
+        return comprobante[4]['cfdi:Complemento'][0][':@']['@_UUID']
+      } else if (comprobante.length === 6) {
+        if (comprobante[5]['cfdi:Complemento'] === undefined) {
+          return comprobante[4]['cfdi:Complemento'][0][':@']['@_UUID']
+        } else {
+          return comprobante[5]['cfdi:Complemento'][0][':@']['@_UUID']
+        }
       } else {
-        return ''
+        if (comprobante[3]['cfdi:Complemento'][1] === undefined) {
+          return comprobante[3]['cfdi:Complemento'][0][':@']['@_UUID']
+        } else {
+          return comprobante[3]['cfdi:Complemento'][1][':@']['@_UUID']
+        }
       }
     }
 
     const emisor = descripcion().includes('PAGO POR SERVICIOS PROFESIONALES')
-      ? jsonObj[root]['cfdi:Comprobante'][0][':@']['@_Nombre']
+      ? comprobante[0][':@']['@_Nombre']
       : ''
 
     // @ to format text to columns in excel
-    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${ivaTrasladado()}@${ivaRetenido()}@${isrRetenido()}@${iepsTrasladado()}@@${folioFactura()}@${folioFiscal()}@${emisor}`
+    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${trasladadoRetenido('Traslados', '002')}@${trasladadoRetenido('Retenciones', '002')}@${trasladadoRetenido('Retenciones', '001')}@${trasladadoRetenido('Traslados', '003')}@@${folioFactura()}@${folioFiscal()}@${emisor}`
   },
   exportData(event) {
     const matchDownload = event.target.matches('#download')
     if (matchDownload) {
-      extractor.convert()
-      /*try {
+      try {
         extractor.convert()
       } catch (error) {
         if (error.name === 'TypeError') {
           alert('El archivo XML no es compatible')
           return
         }
-      }*/
+      }
+
       let blob = new Blob([data], {
         type: 'text/plain;charset=utf-8'
       })
