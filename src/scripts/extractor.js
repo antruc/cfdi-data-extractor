@@ -290,9 +290,12 @@ const extractor = {
       }
     }
 
-    const emisor = descripcion().includes('PAGO POR SERVICIOS PROFESIONALES')
-      ? comprobante[0][':@']['@_Nombre']
-      : ''
+    const emisor =
+      descripcion().includes('PAGO POR SERVICIOS PROFESIONALES') ||
+      descripcion().includes('PAGO POR PRESTACION DE SERVICIOS') ||
+      descripcion().includes('PAGO POR LA PRESTACION DE SERVICIOS')
+        ? comprobante[0][':@']['@_Nombre']
+        : ''
 
     // @ to format text to columns in excel
     data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${trasladadoRetenido('Traslados', '002')}@${trasladadoRetenido('Retenciones', '002')}@${trasladadoRetenido('Retenciones', '001')}@${trasladadoRetenido('Traslados', '003')}@@${folioFactura()}@${folioFiscal()}@${emisor}`
