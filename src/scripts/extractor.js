@@ -1,6 +1,5 @@
 import { XMLParser } from 'fast-xml-parser'
 import { saveAs } from 'file-saver'
-import onEvent from './onEvent.js'
 
 let data = null
 let name = null
@@ -328,8 +327,8 @@ const extractor = {
     }
   },
   init() {
-    onEvent('change', extractor.importXML)
-    onEvent('click', extractor.exportData)
+    document.addEventListener('change', extractor.importXML)
+    document.addEventListener('click', extractor.exportData)
   }
 }
 
