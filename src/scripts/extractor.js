@@ -6,9 +6,7 @@ let name = null
 
 const extractor = {
   importXML(event) {
-    const matchUpload = event.target.matches('#upload')
-    // Get input box
-    if (matchUpload) {
+    if (event.target.matches('#upload')) {
       const inputUpload = document.querySelector('#upload')
 
       const file = inputUpload.files[0]
@@ -19,9 +17,7 @@ const extractor = {
       reader.onload = () => {
         if (file.type === 'text/xml') {
           data = reader.result
-
-          const downloadElem = document.querySelector('#download')
-          downloadElem.classList.add('is-visible')
+          document.querySelector('#download').classList.add('is-visible')
         } else {
           alert('El archivo no es XML')
           // Empty input box
@@ -44,21 +40,18 @@ const extractor = {
     // Add compability with different cfdi formats
     const root = jsonObj.length === 1 ? 0 : 1
 
-    const fecha = jsonObj[root][':@']['@_Fecha'].substring(0, 10)
+    const rootAt = jsonObj[root][':@']
+
+    const fecha = rootAt['@_Fecha'].substring(0, 10)
 
     const comprobante = jsonObj[root]['cfdi:Comprobante']
 
     const descripcion = () => {
       const conceptos =
-        comprobante[3]['cfdi:Conceptos'] === undefined
-          ? comprobante[2]['cfdi:Conceptos']
-          : comprobante[3]['cfdi:Conceptos']
+        comprobante[3]['cfdi:Conceptos'] ?? comprobante[2]['cfdi:Conceptos']
       let desc = []
       for (let i = 0; i < conceptos.length; i++) {
-        let item =
-          comprobante[3]['cfdi:Conceptos'] === undefined
-            ? comprobante[2]['cfdi:Conceptos'][i][':@']['@_Descripcion']
-            : comprobante[3]['cfdi:Conceptos'][i][':@']['@_Descripcion']
+        let item = conceptos[i][':@']['@_Descripcion']
         desc.push(item)
       }
       // Create new array without duplicate values
@@ -66,227 +59,121 @@ const extractor = {
       return descripciones.join(' - ')
     }
 
+    const usos = {
+      G01: 'ADQUISICIÓN DE MERCANCÍAS',
+      G02: 'DEVOLUCIONES, DESCUENTOS O BONIFICACIONES',
+      G03: 'GASTOS EN GENERAL',
+      I01: 'CONSTRUCCIONES',
+      I02: 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES',
+      I03: 'EQUIPO DE TRANSPORTE',
+      I04: 'EQUIPO DE COMPUTO Y ACCESORIOS',
+      I05: 'DADOS, TROQUELES, MOLDES, MATRICES Y HERRAMENTAL',
+      I06: 'COMUNICACIONES TELEFÓNICAS',
+      I07: 'COMUNICACIONES SATELITALES',
+      I08: 'OTRA MAQUINARIA Y EQUIPO',
+      D01: 'HONORARIOS MÉDICOS, DENTALES Y GASTOS HOSPITALARIOS',
+      D02: 'GASTOS MÉDICOS POR INCAPACIDAD O DISCAPACIDAD',
+      D03: 'GASTOS FUNERALES',
+      D04: 'DONATIVOS',
+      D05: 'INTERESES REALES EFECTIVAMENTE PAGADOS POR CRÉDITOS HIPOTECARIOS (CASA HABITACIÓN)',
+      D06: 'APORTACIONES VOLUNTARIAS AL SAR',
+      D07: 'PRIMAS POR SEGUROS DE GASTOS MÉDICOS',
+      D08: 'GASTOS DE TRANSPORTACIÓN ESCOLAR OBLIGATORIA',
+      D09: 'DEPÓSITOS EN CUENTAS PARA EL AHORRO, PRIMAS QUE TENGAN COMO BASE PLANES DE PENSIONES',
+      D10: 'PAGOS POR SERVICIOS EDUCATIVOS (COLEGIATURAS)',
+      P01: 'POR DEFINIR',
+      S01: 'SIN EFECTOS FISCALES',
+      CP01: 'PAGOS',
+      CN01: 'NÓMINA'
+    }
+
     const usoCFDI = () => {
-      const uso =
-        comprobante[2][':@'] === undefined
-          ? comprobante[1][':@']['@_UsoCFDI']
-          : comprobante[2][':@']['@_UsoCFDI']
-      if (uso === 'G01') {
-        return 'ADQUISICIÓN DE MERCANCÍAS'
-      } else if (uso === 'G02') {
-        return 'DEVOLUCIONES, DESCUENTOS O BONIFICACIONES'
-      } else if (uso === 'G03') {
-        return 'GASTOS EN GENERAL'
-      } else if (uso === 'I01') {
-        return 'CONSTRUCCIONES'
-      } else if (uso === 'I02') {
-        return 'MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES'
-      } else if (uso === 'I03') {
-        return 'EQUIPO DE TRANSPORTE'
-      } else if (uso === 'I04') {
-        return 'EQUIPO DE COMPUTO Y ACCESORIOS'
-      } else if (uso === 'I05') {
-        return 'DADOS, TROQUELES, MOLDES, MATRICES Y HERRAMENTAL'
-      } else if (uso === 'I06') {
-        return 'COMUNICACIONES TELEFÓNICAS'
-      } else if (uso === 'I07') {
-        return 'COMUNICACIONES SATELITALES'
-      } else if (uso === 'I08') {
-        return 'OTRA MAQUINARIA Y EQUIPO'
-      } else if (uso === 'D01') {
-        return 'HONORARIOS MÉDICOS, DENTALES Y GASTOS HOSPITALARIOS'
-      } else if (uso === 'D02') {
-        return 'GASTOS MÉDICOS POR INCAPACIDAD O DISCAPACIDAD'
-      } else if (uso === 'D03') {
-        return 'GASTOS FUNERALES'
-      } else if (uso === 'D04') {
-        return 'DONATIVOS'
-      } else if (uso === 'D05') {
-        return 'INTERESES REALES EFECTIVAMENTE PAGADOS POR CRÉDITOS HIPOTECARIOS (CASA HABITACIÓN)'
-      } else if (uso === 'D06') {
-        return 'APORTACIONES VOLUNTARIAS AL SAR'
-      } else if (uso === 'D07') {
-        return 'PRIMAS POR SEGUROS DE GASTOS MÉDICOS'
-      } else if (uso === 'D08') {
-        return 'GASTOS DE TRANSPORTACIÓN ESCOLAR OBLIGATORIA'
-      } else if (uso === 'D09') {
-        return 'DEPÓSITOS EN CUENTAS PARA EL AHORRO, PRIMAS QUE TENGAN COMO BASE PLANES DE PENSIONES'
-      } else if (uso === 'D10') {
-        return 'PAGOS POR SERVICIOS EDUCATIVOS (COLEGIATURAS)'
-      } else if (uso === 'P01') {
-        return 'POR DEFINIR'
-      } else if (uso === 'S01') {
-        return 'SIN EFECTOS FISCALES'
-      } else if (uso === 'CP01') {
-        return 'PAGOS'
-      } else if (uso === 'CN01') {
-        return 'NÓMINA'
-      } else {
-        return ''
-      }
+      const clave =
+        comprobante[2][':@']?.['@_UsoCFDI'] ??
+        comprobante[1][':@']?.['@_UsoCFDI']
+
+      return usos[clave] ?? ''
+    }
+
+    const formas = {
+      '01': 'EFECTIVO',
+      '02': 'CHEQUE NOMINATIVO',
+      '03': 'TRANSFERENCIA ELECTRÓNICA DE FONDOS SPEI',
+      '04': 'TARJETA DE CRÉDITO',
+      '05': 'MONEDERO ELECTRÓNICO',
+      '06': 'DINERO ELECTRÓNICO',
+      '08': 'VALES DE DESPENSA',
+      12: 'DACIÓN EN PAGO',
+      13: 'PAGO POR SUBROGACIÓN',
+      14: 'PAGO POR CONSIGNACIÓN',
+      15: 'CONDONACIÓN',
+      17: 'COMPENSACIÓN',
+      23: 'NOVACIÓN',
+      24: 'CONFUSIÓN',
+      25: 'REMISIÓN DE DEUDA',
+      26: 'PRESCRIPCIÓN O CADUCIDAD',
+      27: 'A SATISFACCIÓN DEL ACREEDOR',
+      28: 'TARJETA DE DÉBITO',
+      29: 'TARJETA DE SERVICIOS',
+      30: 'APLICACIÓN DE ANTICIPOS',
+      31: 'INTERMEDIARIO PAGOS',
+      99: 'POR DEFINIR'
     }
 
     const formaPago = () => {
-      const pago = () => {
-        if (comprobante.length >= 5) {
-          return jsonObj[root][':@']['@_FormaPago']
-        } else {
-          if (
-            comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'] === undefined
-          ) {
-            return jsonObj[root][':@']['@_FormaPago']
-          } else {
-            return comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'][1][
-              ':@'
-            ]['@_FormaDePagoP']
-          }
-        }
-      }
-      if (pago() === '01') {
-        return 'EFECTIVO'
-      } else if (pago() === '02') {
-        return 'CHEQUE NOMINATIVO'
-      } else if (pago() === '03') {
-        return 'TRANSFERENCIA ELECTRÓNICA DE FONDOS SPEI'
-      } else if (pago() === '04') {
-        return 'TARJETA DE CRÉDITO'
-      } else if (pago() === '05') {
-        return 'MONEDERO ELECTRÓNICO'
-      } else if (pago() === '06') {
-        return 'DINERO ELECTRÓNICO'
-      } else if (pago() === '08') {
-        return 'VALES DE DESPENSA'
-      } else if (pago() === '12') {
-        return 'DACIÓN EN PAGO'
-      } else if (pago() === '13') {
-        return 'PAGO POR SUBROGACIÓN'
-      } else if (pago() === '14') {
-        return 'PAGO POR CONSIGNACIÓN'
-      } else if (pago() === '15') {
-        return 'CONDONACIÓN'
-      } else if (pago() === '17') {
-        return 'COMPENSACIÓN'
-      } else if (pago() === '23') {
-        return 'NOVACIÓN'
-      } else if (pago() === '24') {
-        return 'CONFUSIÓN'
-      } else if (pago() === '25') {
-        return 'REMISIÓN DE DEUDA'
-      } else if (pago() === '26') {
-        return 'PRESCRIPCIÓN O CADUCIDAD'
-      } else if (pago() === '27') {
-        return 'A SATISFACCIÓN DEL ACREEDOR'
-      } else if (pago() === '28') {
-        return 'TARJETA DE DÉBITO'
-      } else if (pago() === '29') {
-        return 'TARJETA DE SERVICIOS'
-      } else if (pago() === '30') {
-        return 'APLICACIÓN DE ANTICIPOS'
-      } else if (pago() === '31') {
-        return 'INTERMEDIARIO PAGOS'
-      } else if (pago() === '99') {
-        return 'POR DEFINIR'
-      } else {
-        return ''
-      }
+      const pago =
+        comprobante[3]['cfdi:Complemento']?.[0]['pago20:Pagos']?.[1][':@']?.[
+          '@_FormaDePagoP'
+        ] ?? rootAt['@_FormaPago']
+
+      return formas[pago] ?? ''
     }
 
-    const subTotal = jsonObj[root][':@']['@_SubTotal']
+    const subTotal = rootAt['@_SubTotal']
 
-    const descuento = () => {
-      const cantidad = jsonObj[root][':@']['@_Descuento']
-      if (cantidad === undefined) {
-        // No descuento found
-        return ''
-      } else {
-        return cantidad
-      }
-    }
+    const descuento = rootAt['@_Descuento'] ?? '' // No descuento found
 
-    const impuestosFunc = () => {
-      if (comprobante.length >= 5) {
-        if (comprobante[4]['cfdi:Impuestos'] === undefined) {
-          return comprobante[3]['cfdi:Impuestos']
-        } else {
-          return comprobante[4]['cfdi:Impuestos']
-        }
-      } else {
-        if (
-          comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'] === undefined
-        ) {
-          // No impuestos found
-          return ''
-        } else {
-          return comprobante[3]['cfdi:Complemento'][0]['pago20:Pagos'][1][
+    const impuestos =
+      comprobante.length >= 5
+        ? (comprobante[4]['cfdi:Impuestos'] ?? comprobante[3]['cfdi:Impuestos'])
+        : (comprobante[3]['cfdi:Complemento']?.[0]['pago20:Pagos']?.[1][
             'pago20:Pago'
-          ][1]['pago20:ImpuestosP']
-        }
-      }
-    }
+          ]?.[1]['pago20:ImpuestosP'] ?? '') // No impuestos found
 
-    const impuestos = impuestosFunc()
-
-    const trasladadoRetenido = (taxName, taxNumber) => {
+    const trasladadoRetenido = (taxName, taxtCode) => {
       let tax = 0
       Object.keys(impuestos).forEach((i) => {
-        if (impuestos[i][`cfdi:${taxName}`] !== undefined) {
-          Object.keys(impuestos[i][`cfdi:${taxName}`]).forEach((e) => {
-            if (
-              impuestos[i][`cfdi:${taxName}`][e][':@']['@_Impuesto'] ===
-              taxNumber
-            ) {
-              tax =
-                tax +
-                Number(impuestos[i][`cfdi:${taxName}`][e][':@']['@_Importe'])
-            }
+        const nameC = impuestos[i][`cfdi:${taxName}`]
+        const nameP = impuestos[i][`pago20:${taxName}P`]
+
+        if (nameC) {
+          Object.keys(nameC).forEach((e) => {
+            if (nameC[e][':@']['@_Impuesto'] === taxtCode)
+              tax = tax + Number(nameC[e][':@']['@_Importe'])
           })
-        } else if (impuestos[i][`pago20:${taxName}P`] !== undefined) {
-          Object.keys(impuestos[i][`pago20:${taxName}P`]).forEach((e) => {
-            if (
-              impuestos[i][`pago20:${taxName}P`][e][':@']['@_ImpuestoP'] ===
-              taxNumber
-            ) {
-              tax =
-                tax +
-                Number(
-                  impuestos[i][`pago20:${taxName}P`][e][':@']['@_ImporteP']
-                )
-            }
+        } else if (nameP) {
+          Object.keys(nameP).forEach((e) => {
+            if (nameP[e][':@']['@_ImpuestoP'] === taxtCode)
+              tax = tax + Number(nameP[e][':@']['@_ImporteP'])
           })
         }
       })
-      if (tax > 0) {
-        return tax
-      } else {
-        return ''
-      }
+      return tax > 0 ? tax : ''
     }
 
-    const folioFactura = () => {
-      const folio = jsonObj[root][':@']['@_Folio']
-      if (folio === undefined) {
-        return ''
-      } else {
-        return folio
-      }
-    }
+    const folioFactura = rootAt['@_Folio'] ?? '' // No folio found
 
     const folioFiscal = () => {
-      if (comprobante.length === 5) {
-        return comprobante[4]['cfdi:Complemento'][0][':@']['@_UUID']
-      } else if (comprobante.length === 6) {
-        if (comprobante[5]['cfdi:Complemento'] === undefined) {
-          return comprobante[4]['cfdi:Complemento'][0][':@']['@_UUID']
-        } else {
-          return comprobante[5]['cfdi:Complemento'][0][':@']['@_UUID']
-        }
-      } else {
-        if (comprobante[3]['cfdi:Complemento'][1] === undefined) {
-          return comprobante[3]['cfdi:Complemento'][0][':@']['@_UUID']
-        } else {
-          return comprobante[3]['cfdi:Complemento'][1][':@']['@_UUID']
-        }
-      }
+      const c3 = comprobante[3]?.['cfdi:Complemento']
+      const c4 = comprobante[4]?.['cfdi:Complemento']
+      const c5 = comprobante[5]?.['cfdi:Complemento']
+
+      if (comprobante.length === 5) return c4[0][':@']['@_UUID']
+
+      if (comprobante.length === 6)
+        return c5[0][':@']['@_UUID'] ?? c4[0][':@']['@_UUID']
+
+      return c3[':@']?.['@_UUID'] ?? c3[0][':@']?.['@_UUID']
     }
 
     const emisor =
@@ -297,33 +184,28 @@ const extractor = {
         : ''
 
     // @ to format text to columns in excel
-    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento()}@${trasladadoRetenido('Traslados', '002')}@${trasladadoRetenido('Retenciones', '002')}@${trasladadoRetenido('Retenciones', '001')}@${trasladadoRetenido('Traslados', '003')}@@${folioFactura()}@${folioFiscal()}@${emisor}`
+    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento}@${trasladadoRetenido('Traslados', '002')}@${trasladadoRetenido('Retenciones', '002')}@${trasladadoRetenido('Retenciones', '001')}@${trasladadoRetenido('Traslados', '003')}@@${folioFactura}@${folioFiscal()}@${emisor}`
   },
   exportData(event) {
-    const matchDownload = event.target.matches('#download')
-    if (matchDownload) {
+    if (event.target.matches('#download')) {
       try {
         extractor.convert()
       } catch (error) {
-        if (error.name === 'TypeError') {
+        if (error instanceof TypeError) {
           alert('El archivo XML no es compatible')
+          console.log(error)
           return
         }
       }
 
-      let blob = new Blob([data], {
+      const blob = new Blob([data], {
         type: 'text/plain;charset=utf-8'
       })
       // Save text document
       saveAs(blob, `${name}.txt`)
 
-      const downloadElem = document.querySelector('#download')
-      if (downloadElem) {
-        downloadElem.classList.remove('is-visible')
-      }
-
-      const inputUpload = document.querySelector('#upload')
-      inputUpload.value = null
+      document.querySelector('#download').classList.remove('is-visible')
+      document.querySelector('#upload').value = null
     }
   },
   init() {
