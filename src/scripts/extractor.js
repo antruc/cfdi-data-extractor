@@ -9,7 +9,9 @@ const extractor = {
     if (event.target.matches('#upload')) {
       const inputUpload = document.querySelector('#upload')
 
+      // Get the first file from the file input
       const file = inputUpload.files[0]
+      // Get the file name without the ".xml" extension
       name = file.name.replace('.xml', '')
 
       const reader = new FileReader()
@@ -21,7 +23,7 @@ const extractor = {
         } else {
           alert('El archivo no es XML')
           // Empty input box
-          inputUpload.value = null
+          inputUpload.value = null // Reset the file input box
         }
       }
     }
@@ -29,7 +31,7 @@ const extractor = {
   convert() {
     const xmlFile = data
 
-    // For XML parser
+    // Set options for the XML parser
     const options = {
       ignoreAttributes: false,
       preserveOrder: true
@@ -38,9 +40,9 @@ const extractor = {
     const jsonObj = parser.parse(xmlFile)
 
     // Add compability with different cfdi formats
-    const root = jsonObj.length === 1 ? 0 : 1
+    const root = jsonObj.length === 1 ? 0 : 1 
 
-    const rootAt = jsonObj[root][':@']
+    const rootAt = jsonObj[root][':@'] // Extract the root attributes
 
     const fecha = rootAt['@_Fecha'].substring(0, 10)
 
@@ -54,7 +56,7 @@ const extractor = {
         let item = conceptos[i][':@']['@_Descripcion']
         desc.push(item)
       }
-      // Create new array without duplicate values
+      // Create a new array without duplicate descriptions and join them into a string
       const descripciones = [...new Set(desc)]
       return descripciones.join(' - ')
     }
@@ -176,6 +178,7 @@ const extractor = {
       return c3[':@']?.['@_UUID'] ?? c3[0][':@']?.['@_UUID']
     }
 
+    // Extract the issuer name based on specific descriptions
     const emisor =
       descripcion().includes('PAGO POR SERVICIOS PROFESIONALES') ||
       descripcion().includes('PAGO POR PRESTACION DE SERVICIOS') ||
@@ -183,7 +186,7 @@ const extractor = {
         ? comprobante[0][':@']['@_Nombre']
         : ''
 
-    // @ to format text to columns in excel
+    // Format the extracted data into a specific structure, separating fields with '@'
     data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento}@${trasladadoRetenido('Traslados', '002')}@${trasladadoRetenido('Retenciones', '002')}@${trasladadoRetenido('Retenciones', '001')}@${trasladadoRetenido('Traslados', '003')}@@${folioFactura}@${folioFiscal()}@${emisor}`
   },
   exportData(event) {
@@ -201,7 +204,7 @@ const extractor = {
       const blob = new Blob([data], {
         type: 'text/plain;charset=utf-8'
       })
-      // Save text document
+      // Save as text document
       saveAs(blob, `${name}.txt`)
 
       document.querySelector('#download').classList.remove('is-visible')
