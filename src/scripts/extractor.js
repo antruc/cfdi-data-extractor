@@ -40,7 +40,7 @@ const extractor = {
     const jsonObj = parser.parse(xmlFile)
 
     // Add compability with different cfdi formats
-    const root = jsonObj.length === 1 ? 0 : 1 
+    const root = jsonObj.length === 1 ? 0 : 1
 
     const rootAt = jsonObj[root][':@'] // Extract the root attributes
 
