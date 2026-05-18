@@ -1,6 +1,4 @@
-# Ignore artifacts:
 dist
-www
 public
 
 # Ignore all HTML files:
