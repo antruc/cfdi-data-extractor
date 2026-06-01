@@ -1,5 +1,5 @@
-import theme from './scripts/theme.js'
-import extractor from './scripts/extractor.js'
+import theme from './js/theme.js'
+import extractor from './js/extractor.js'
 
 theme.init()
 extractor.init()
