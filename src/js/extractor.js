@@ -42,11 +42,17 @@ const extractor = {
     // Add compability with different cfdi formats
     const root = jsonObj.length === 1 ? 0 : 1
 
+    const comprobante = jsonObj[root]['cfdi:Comprobante']
+
+    const emisor = comprobante[0][':@']['@_Nombre']
+    const rfcEmisor = comprobante[0][':@']['@_Rfc']
+
+    const receptor = comprobante[1][':@']['@_Nombre']
+    const rfcReceptor = comprobante[1][':@']['@_Rfc']
+
     const rootAt = jsonObj[root][':@'] // Extract the root attributes
 
     const fecha = rootAt['@_Fecha'].substring(0, 10)
-
-    const comprobante = jsonObj[root]['cfdi:Comprobante']
 
     const descripcion = () => {
       const conceptos =
@@ -178,16 +184,8 @@ const extractor = {
       return c3[':@']?.['@_UUID'] ?? c3[0][':@']?.['@_UUID']
     }
 
-    // Extract the issuer name based on specific descriptions
-    const emisor =
-      descripcion().includes('PAGO POR SERVICIOS PROFESIONALES') ||
-      descripcion().includes('PAGO POR PRESTACION DE SERVICIOS') ||
-      descripcion().includes('PAGO POR LA PRESTACION DE SERVICIOS')
-        ? comprobante[0][':@']['@_Nombre']
-        : ''
-
     // Format the extracted data into a specific structure, separating fields with '@'
-    data = `@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento}@${trasladadoRetenido('Traslados', '002')}@${trasladadoRetenido('Retenciones', '002')}@${trasladadoRetenido('Retenciones', '001')}@${trasladadoRetenido('Traslados', '003')}@@${folioFactura}@${folioFiscal()}@${emisor}`
+    data = `@${emisor}@${rfcEmisor}@${receptor}@${rfcReceptor}@${fecha}@@@@${descripcion()}@@${usoCFDI()}@${formaPago()}@${subTotal}@${descuento}@${trasladadoRetenido('Traslados', '002')}@${trasladadoRetenido('Retenciones', '002')}@${trasladadoRetenido('Retenciones', '001')}@${trasladadoRetenido('Traslados', '003')}@@${folioFactura}@${folioFiscal()}`
   },
   exportData(event) {
     if (event.target.matches('#download')) {
