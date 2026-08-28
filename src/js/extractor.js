@@ -149,6 +149,13 @@ const extractor = {
           ]?.[1]['pago20:ImpuestosP'] ?? '') // No impuestos found
 
     const trasladadoRetenido = (taxName, taxtCode) => {
+      const complemento =
+        comprobante[3]['cfdi:Complemento']?.[0]['pago20:Pagos']?.[1][
+          'pago20:Pago'
+        ]?.[0][':@']?.['@_IdDocumento']
+      if (complemento) {
+        return 0
+      }
       let tax = 0
       Object.keys(impuestos).forEach((i) => {
         const nameC = impuestos[i][`cfdi:${taxName}`]
@@ -181,7 +188,7 @@ const extractor = {
       if (comprobante.length === 6)
         return c5[0][':@']['@_UUID'] ?? c4[0][':@']['@_UUID']
 
-      return c3[':@']?.['@_UUID'] ?? c3[0][':@']?.['@_UUID']
+      return c3[':@']?.['@_UUID'] ?? c3[0][':@']?.['@_UUID'] ?? ''
     }
 
     // Format the extracted data into a specific structure, separating fields with '@'
